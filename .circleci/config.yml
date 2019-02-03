@@ -1,56 +1,39 @@
+# Javascript Node CircleCI 2.0 configuration file
 #
-# @title Build and Commit
-# @since 2018/08/07
-# @author kokubu-yumiko
+# Check https://circleci.com/docs/2.0/language-javascript/ for more details
 #
-
 version: 2
 jobs:
   build:
     docker:
-      - image: circleci/node:8.11-browsers
-    working_directory: ~/app
+      # specify the version you desire here
+      - image: circleci/node:7.10
+      
+      # Specify service dependencies here if necessary
+      # CircleCI maintains a library of pre-built images
+      # documented at https://circleci.com/docs/2.0/circleci-images/
+      # - image: circleci/mongo:3.4.4
+
+    working_directory: ~/repo
+
     steps:
       - checkout
-      - add_ssh_keys:
-          fingerprints:
-            - "fa:90:50:a6:45:a1:17:02:2f:c6:28:3b:15:ed:c6:40"
-      - run:
-          name: "git config"
-          command: |
-            git config --global user.email "circleci@example.com"
-            git config --global user.name "circleci"
-            git config --global push.default simple
-      - run:
-          name: "setup branch"
-          command: |
-            git fetch origin
-            git checkout testsite
-            git merge $CIRCLE_BRANCH --no-ff -m 'CI: merge $CIRCLE_BRANCH'
-      - run:
-          name: "yarn install"
-          command: "yarn install"
-      - run:
-          name: "build"
-          command: "yarn run build"
-      - run:
-          name: "git add"
-          command: "git add ./public"
-      - run:
-          name: "git commit"
-          command: |
-            set +o pipefail
-            git commit -m 'CI: build' | true
-      - run:
-          name: "git push"
-          command: "git push origin testsite"
 
-workflows:
-  version: 2
-  build_deploy:
-    jobs:
-      - build:
-          filters:
-            branches:
-              only:
-                - develop
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v1-dependencies-{{ checksum "package.json" }}
+          # fallback to using the latest cache if no exact match is found
+          - v1-dependencies-
+
+      - run: yarn install
+
+      - save_cache:
+          paths:
+            - node_modules
+          key: v1-dependencies-{{ checksum "package.json" }}
+        
+      # run tests!
+      - run: yarn test
+
+
